@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 using ASPNETCoreExternalAPIRequest.Models;
 
 namespace ASPNETCoreExternalAPIRequest.Data
@@ -10,6 +12,6 @@ namespace ASPNETCoreExternalAPIRequest.Data
             : base(options)
         {
         }
-        public DbSet<Photo> Photos{ get; set; }
+        public DbSet<Photo> Photos { get; set; }
     }
 }

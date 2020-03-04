@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ASPNETCoreExternalAPIRequest.Data;
 using ASPNETCoreExternalAPIRequest.Models;
+using System.Net.Http;
+using Newtonsoft.Json.Linq;
 
 namespace ASPNETCoreExternalAPIRequest.Controllers
 {
@@ -148,6 +149,61 @@ namespace ASPNETCoreExternalAPIRequest.Controllers
         private bool PhotoExists(int id)
         {
             return _context.Photos.Any(e => e.Id == id);
+        }
+
+        public async Task<IActionResult> FetchPhotos()
+        {
+
+            using (var client = new HttpClient())
+            {
+                // build request 
+                client.BaseAddress = new Uri("https://jsonplaceholder.typicode.com/");
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+                var response = await client.GetAsync($"/photos?_start=0&_limit=10");
+                response.EnsureSuccessStatusCode();
+
+                // convert request to list of Photos
+                var photos = await response.Content.ReadAsStringAsync();
+                JArray photoSearch = JArray.Parse(photos);
+                IList<JToken> results = photoSearch.Children().ToList();
+                IList<Photo> searchResults = new List<Photo>();
+
+                // update photo or add if not exists
+                foreach (JToken result in results)
+                {
+                    // JToken.ToObject is a helper method that uses JsonSerializer internally
+                    Photo searchResult = result.ToObject<Photo>();
+                    searchResults.Add(searchResult);
+
+                    if (!PhotoExists(searchResult.Id))
+                    {
+                        _context.Add(searchResult);
+                    }
+                    else
+                    {
+                        _context.Update(searchResult);
+                    }
+
+                    // since id is being set by api call need to toggle identity on before saving
+                    _context.Database.OpenConnection();
+
+                    try
+                    {
+                        _context.Database.ExecuteSqlRaw("SET IDENTITY_INSERT dbo.Photos ON");
+                        _context.SaveChanges();
+                        _context.Database.ExecuteSqlRaw("SET IDENTITY_INSERT dbo.Photos OFF");
+                    }
+                    finally
+                    {
+                        _context.Database.CloseConnection();
+                    }
+
+                    await _context.SaveChangesAsync();
+                }
+
+                return Redirect("/Photos");
+
+            }
         }
     }
 }

@@ -10,9 +10,15 @@
 <p>
     <a asp-action="Create">Create New</a>
 </p>
+<p>
+    <a asp-controller="Photos" asp-action="FetchPhotos">Update Photos</a>
+</p>
 <table class="table">
     <thead>
         <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Id)
+            </th>
             <th>
                 @Html.DisplayNameFor(model => model.AlbumId)
             </th>
@@ -31,6 +37,9 @@
     <tbody>
 @foreach (var item in Model) {
         <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Id)
+            </td>
             <td>
                 @Html.DisplayFor(modelItem => item.AlbumId)
             </td>
